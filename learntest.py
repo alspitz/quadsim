@@ -5,10 +5,10 @@ import numpy as np
 from scipy.spatial.transform import Rotation as R
 
 from quadsim.cascaded import CascadedController, CascadedControllerLearnAccel
-from quadsim.dist import MassDisturbance, LinearDrag, InertiaDisturbance
+from quadsim.dist import MassDisturbance, LinearDrag, InertiaDisturbance, MotorModelDisturbance
 from quadsim.fblin import FBLinController, FBLinControllerLearnAccel
 from quadsim.flatref import StaticRef, PosLineYawLine, YawLine, PosLine
-from quadsim.models import IdentityModel
+from quadsim.models import IdentityModel, rocky09
 from quadsim.rigid_body import State
 
 from quadsim.compare import Test, plot, run
@@ -19,9 +19,10 @@ from regression import Linear
 
 if __name__ == "__main__":
   startpos = np.zeros(3)
-  endpos = np.array((3, 3, 0.0))
+  endpos = np.array((0, 3, 0.0))
   startyaw = 0.0
-  endyaw = np.pi / 2
+  #endyaw = np.pi / 2
+  endyaw = 0.0
   duration = 2.0
 
   startstate = State(
@@ -32,9 +33,11 @@ if __name__ == "__main__":
   )
 
   dt = 0.005
-  t_end = 3.0
+  t_end = 2.0
 
   n_trials = 6
+
+  sim_motors = True
 
   #ref = StaticRef(pos=endpos, yaw=endyaw)
   #ref = PosLine(start=startpos, end=endpos, yaw=endyaw, duration=duration)
@@ -42,12 +45,15 @@ if __name__ == "__main__":
   ref = PosLineYawLine(start=startpos, end=endpos, startyaw=startyaw, endyaw=endyaw, duration=duration)
 
   dists = [
-    #MassDisturbance(1.2),
-    #InertiaDisturbance((1.3, 1.2, 1.5)),
-    LinearDrag(2.2),
+    MassDisturbance(1.2),
+    InertiaDisturbance((1.3, 1.2, 1.5)),
+    LinearDrag(0.6),
+    MotorModelDisturbance(0.8),
   ]
 
-  model_control = IdentityModel()
+  model_control = rocky09()
+  #model_control = IdentityModel()
+
   model_true = copy.deepcopy(model_control)
 
   learner = Linear()
@@ -65,5 +71,5 @@ if __name__ == "__main__":
     Test(fblin_learn, label="FBLin Learn", n_trials=n_trials)
   ]
 
-  run(model_true, startstate, ref, dists, tests, dt, t_end)
+  run(model_true, startstate, ref, dists, tests, dt, t_end, sim_motors=sim_motors)
   plot(tests, ref)

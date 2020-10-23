@@ -5,12 +5,12 @@ import numpy as np
 from scipy.spatial.transform import Rotation as R
 
 from quadsim.cascaded import CascadedController
-from quadsim.dist import MassDisturbance, LinearDrag, InertiaDisturbance
+from quadsim.dist import MassDisturbance, LinearDrag, InertiaDisturbance, MotorModelDisturbance
 from quadsim.fblin import FBLinController
 from quadsim.flatref import StaticRef, PosLineYawLine, YawLine, PosLine
-from quadsim.models import IdentityModel
+from quadsim.models import IdentityModel, rocky09
 from quadsim.rigid_body import State
-from quadsim.sim import QuadSim
+from quadsim.sim import QuadSim, QuadSimMotors
 
 from python_utils.plotu import subplot, set_3daxes_equal
 
@@ -25,11 +25,14 @@ class Test:
     self.n_trials = n_trials
     self.results = []
 
-def run(model, startstate, ref, dists, tests, dt, t_end):
+def run(model, startstate, ref, dists, tests, dt, t_end, sim_motors=False):
   for dist in dists:
     dist.apply(model)
 
-  quadsim = QuadSim(model)
+  if sim_motors:
+    quadsim = QuadSimMotors(model)
+  else:
+    quadsim = QuadSim(model)
 
   for test in tests:
     print(test.plotargs['label'])
@@ -38,7 +41,10 @@ def run(model, startstate, ref, dists, tests, dt, t_end):
       quadsim.setstate(startstate)
       test.controller.ref = ref
 
-      ts = quadsim.simulate(dt=dt, t_end=t_end, controller=test.controller.response, dists=dists)
+      if sim_motors:
+        test.controller.output_rpm = True
+
+      ts = quadsim.simulate(dt=dt, t_end=t_end, controller=test.controller, dists=dists)
 
       if not i:
         test.posdes = ref.pos(ts.times).T
@@ -90,6 +96,16 @@ def plot(tests, ref):
     # Angvel Torque
     subplot(ts.times, ts.ang, yname="$\\omega$ (rad/s)", title="Angular Velocity", **plotargs)
     subplot(ts.times, ts.torque, yname="Torque (Nm)", title="Control Torque", **plotargs)
+    if hasattr(ts, 'torquedes'):
+      subplot(ts.times, ts.torquedes, yname="Torque (Nm)", title="Control Torque", **plotargs, linestyle='dashed')
+
+    # Thrust
+    subplot(ts.times, ts.force, yname="Thrust (N)", title="Control Thrust", **plotargs)
+    if hasattr(ts, 'forcedes'):
+      subplot(ts.times, ts.forcedes, yname="Thrust (N)", title="Control Thrust", **plotargs, linestyle='dashed')
+
+    if hasattr(ts, 'uddot'):
+      subplot(ts.times, ts.uddot, yname="u ddot (m/s$^4$)", title="U ddot", **plotargs)
 
     # Pos Err
     subplot(ts.times, ts.poserr,  yname="Pos. Err. (m)", title="Position Error Per Axis", **plotargs)
@@ -102,10 +118,13 @@ def plot(tests, ref):
   plt.show()
 
 if __name__ == "__main__":
+  edgesize = 1.0
+
   startpos = np.zeros(3)
-  endpos = np.array((3, 3, 0.0))
+  endpos = np.array((edgesize, edgesize, 0.0))
   startyaw = 0.0
-  endyaw = np.pi / 2
+  #endyaw = np.pi / 2
+  endyaw = 0.0
   duration = 2.0
 
   startstate = State(
@@ -115,21 +134,24 @@ if __name__ == "__main__":
     ang=np.zeros(3)
   )
 
-  dt = 0.005
-  t_end = 5.0
+  dt = 0.002
+  t_end = 1.5
+  sim_motors = True
 
-  #ref = StaticRef(pos=endpos, yaw=endyaw)
+  ref = StaticRef(pos=endpos, yaw=endyaw)
   #ref = PosLine(start=startpos, end=endpos, yaw=endyaw, duration=duration)
   #ref = YawLine(pos=endpos, startyaw=startyaw, endyaw=endyaw, duration=duration)
-  ref = PosLineYawLine(start=startpos, end=endpos, startyaw=startyaw, endyaw=endyaw, duration=duration)
+  #ref = PosLineYawLine(start=startpos, end=endpos, startyaw=startyaw, endyaw=endyaw, duration=duration)
 
   dists = [
-    MassDisturbance(1.2),
-    InertiaDisturbance((1.3, 1.2, 1.5)),
-    LinearDrag(2.2),
+    #MassDisturbance(1.2),
+    #InertiaDisturbance((1.3, 1.2, 1.5)),
+    #LinearDrag(2.2),
+    MotorModelDisturbance(0.8)
   ]
 
-  model_control = IdentityModel()
+  #model_control = IdentityModel()
+  model_control = rocky09()
   model_true = copy.deepcopy(model_control)
 
   def casc(rm):
@@ -143,5 +165,5 @@ if __name__ == "__main__":
     Test(fblin, label="FBLin")
   ]
 
-  run(model_true, startstate, ref, dists, tests, dt, t_end)
+  run(model_true, startstate, ref, dists, tests, dt, t_end, sim_motors=sim_motors)
   plot(tests, ref)

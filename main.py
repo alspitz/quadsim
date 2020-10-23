@@ -28,7 +28,7 @@ if __name__ == "__main__":
   controller = FBLinController(model, dt=dt)
 
   controller.ref = ref
-  ts = quadsim.simulate(dt=dt, t_end=5.0, controller=controller.response)
+  ts = quadsim.simulate(dt=dt, t_end=5.0, controller=controller)
 
   eulers = np.array([rot.as_euler('ZYX')[::-1] for rot in ts.rot])
 

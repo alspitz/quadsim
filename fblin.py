@@ -11,6 +11,8 @@ from quadsim.flatness import get_xdot_xddot
 
 class FBLinController(Controller):
   def __init__(self, model, dt):
+    super().__init__()
+
     self.Kpos = 6 * 120 * np.eye(3)
     self.Kvel = 4 * 120 * np.eye(3)
     self.Kacc = 120 * np.eye(3)
@@ -54,13 +56,20 @@ class FBLinController(Controller):
     angaccel = state.rot.inv().apply(angaccel_world)
 
     yaw = np.arctan2(x[1], x[0])
-    yawvel = (-x[1] * xdot[0] + x[0] * xdot[1]) / (x[0] ** 2 + x[1] ** 2)
-    yawacc = -self.Kyaw * normang(yaw - self.ref.yaw(t)) - self.Kyawvel * (yawvel - self.ref.yawvel(t)) + self.ref.yawacc(t)
 
-    _, xddot = get_xdot_xddot(yawvel, yawacc, x, z, zdot, zddot)
-    alpha_cross_x = xddot - np.cross(ang_world, xdot)
-    # See notes for proof of below line: "Angular Velocity for Yaw" in Notability.
-    angaccel[2] = alpha_cross_x.dot(y)
+    x_xy_norm = x[0] ** 2 + x[1] ** 2
+
+    # Perhaps this is too limiting.
+    # Should still include fblin terms in this case
+    # should only turn off "yaw feedback".
+    if x_xy_norm > 1e-8:
+      yawvel = (-x[1] * xdot[0] + x[0] * xdot[1]) / x_xy_norm
+      yawacc = -self.Kyaw * normang(yaw - self.ref.yaw(t)) - self.Kyawvel * (yawvel - self.ref.yawvel(t)) + self.ref.yawacc(t)
+
+      _, xddot = get_xdot_xddot(yawvel, yawacc, x, z, zdot, zddot)
+      alpha_cross_x = xddot - np.cross(ang_world, xdot)
+      # See notes for proof of below line: "Angular Velocity for Yaw" in Notability.
+      angaccel[2] = alpha_cross_x.dot(y)
 
     bodyz_force = self.model.mass * self.u
     torque = self.model.I.dot(angaccel) + np.cross(state.ang, self.model.I.dot(state.ang))
@@ -69,7 +78,9 @@ class FBLinController(Controller):
     self.u += self.udot * self.dt
     self.udot += uddot * self.dt
 
-    return bodyz_force, torque
+    self.vars.update(uddot=uddot)
+
+    return self.out(bodyz_force, torque)
 
 class FBLinControllerLearnAccel(ControllerLearnAccel):
   def __init__(self, model, learner, dt):
@@ -86,10 +97,16 @@ class FBLinControllerLearnAccel(ControllerLearnAccel):
     self.model = model
     self.dt = dt
 
-    self.u = model.g
+    self.reset()
+    super().__init__(model, learner)
+
+  def reset(self):
+    self.u = self.model.g
     self.udot = 0
 
-    super().__init__(model, learner)
+  def endtrial(self):
+    self.reset()
+    super().endtrial()
 
   def response(self, t, state):
     ang_world = state.rot.apply(state.ang)
@@ -140,4 +157,4 @@ class FBLinControllerLearnAccel(ControllerLearnAccel):
 
     self.accel_learner.add(t, state, (bodyz_force, torque))
 
-    return bodyz_force, torque
+    return self.out(bodyz_force, torque)

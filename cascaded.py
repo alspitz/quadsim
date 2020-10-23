@@ -22,6 +22,7 @@ def thrust_maintain_z(accel_des, rot):
 
 class CascadedController(Controller):
   def __init__(self, model, rot_metric=rot_metrics.euler_zyx, u_f=thrust_project_z):
+    super().__init__()
     self.Kpos = 6 * np.eye(3)
     self.Kvel = 4 * np.eye(3)
     self.Krot = 120 * np.eye(3)
@@ -104,7 +105,7 @@ class CascadedController(Controller):
     bodyz_force = self.model.mass * u
     torque = self.model.I.dot(angaccel) + np.cross(state.ang, self.model.I.dot(state.ang))
 
-    return bodyz_force, torque
+    return self.out(bodyz_force, torque)
 
 class CascadedControllerLearnAccel(ControllerLearnAccel):
   def __init__(self, model, learner, rot_metric=rot_metrics.euler_zyx, u_f=thrust_project_z):
@@ -206,4 +207,4 @@ class CascadedControllerLearnAccel(ControllerLearnAccel):
 
     self.accel_learner.add(t, state, (bodyz_force, torque))
 
-    return bodyz_force, torque
+    return self.out(bodyz_force, torque)

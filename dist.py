@@ -50,3 +50,11 @@ class InertiaDisturbance(ModelDisturbance):
     model.I[0] *= self.scales[0]
     model.I[1] *= self.scales[1]
     model.I[2] *= self.scales[2]
+
+class MotorModelDisturbance(ModelDisturbance):
+  def __init__(self, scale):
+    self.c = scale
+
+  def apply(self, model):
+    model.params['motor_thrust_coeffs'] = self.c * np.array(model.params['motor_thrust_coeffs'])
+    model.update()
