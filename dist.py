@@ -1,5 +1,7 @@
 import numpy as np
 
+from python_utils.wind import WindModel
+
 class ForceDisturbance:
   def apply(self, model):
     pass
@@ -31,6 +33,17 @@ class ConstantForce(ForceDisturbance):
 
   def force(self, state, control):
     return self.c
+
+class WindField(ForceDisturbance):
+  def __init__(self, pos, direction, vmax=10.0, noisevar=0.5, decay_lat=4, decay_long=0.6):
+    self.vmax = vmax
+    self.model = WindModel(pos, direction, vmax=self.vmax, radius=0.2, decay_lat=decay_lat, decay_long=decay_long, dispangle=np.radians(15))
+    self.noisevar = noisevar
+
+  def force(self, state, control):
+    windvel = self.model.velocity(state.pos)
+    noise_scale = np.linalg.norm(windvel) / self.vmax
+    return 0.2 * windvel + self.noisevar * noise_scale * np.random.normal(size=3)
 
 class MassDisturbance(ModelDisturbance):
   def __init__(self, scale):
