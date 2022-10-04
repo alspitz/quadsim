@@ -8,7 +8,7 @@ from quadsim.models import IdentityModel
 
 from python_utils.plotu import subplot, set_3daxes_equal
 
-#import rot_metrics
+#import quadsim.rot_metrics as rot_metrics
 
 import matplotlib.pyplot as plt
 

@@ -3,6 +3,7 @@ import numpy as np
 from scipy.spatial.transform import Rotation as R
 
 from python_utils.mathu import quat_mult, vector_quat, normalized
+from python_utils.rigid_body import euler_int, so3_quat_int
 
 class State:
   def __init__(self, pos=np.zeros(3), vel=np.zeros(3), rot=R.identity(), ang=np.zeros(3)):
@@ -40,14 +41,11 @@ class RigidBody:
     # Torque = I alpha + om x (I om)
     alpha = self.Iinv.dot(torque - np.cross(self.ang, self.I.dot(self.ang)))
 
-    self.pos += self.vel * dt + 0.5 * accel * dt ** 2
+    self.pos += euler_int(dt, self.vel, accel)
     self.vel += accel * dt
 
-    quat_deriv = quat_mult(self.quat, vector_quat(self.ang)) / 2.0
-    quat_dd = quat_mult(self.quat, vector_quat(alpha)) / 2.0
-
-    self.quat += quat_deriv * dt + 0.5 * quat_dd * dt ** 2
-    self.quat = normalized(self.quat)
+    dang = euler_int(dt, self.ang, alpha)
+    self.quat = so3_quat_int(self.quat, dang, dang_in_body=True)
     self.ang += alpha * dt
 
   def getpos(self):

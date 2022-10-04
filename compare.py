@@ -24,7 +24,7 @@ from quadsim.sim import QuadSim, QuadSimMotors
 from python_utils.mathu import normang, smoothang
 from python_utils.plotu import subplot, set_3daxes_equal
 
-import rot_metrics
+import quadsim.rot_metrics as rot_metrics
 
 import matplotlib.pyplot as plt
 
@@ -39,14 +39,17 @@ class Test:
     self.n_trials = n_trials
     self.results = []
 
-def run(model, startstate, ref, dists, tests, dt, t_end, sim_motors=False):
+def run(model, startstate, ref, dists, tests, dt, t_end, sim_motors=False, sim_params=None):
+  if sim_params is None:
+    sim_params = dict()
+
   for dist in dists:
     dist.apply(model)
 
   if sim_motors:
-    quadsim = QuadSimMotors(model)
+    quadsim = QuadSimMotors(model, **sim_params)
   else:
-    quadsim = QuadSim(model)
+    quadsim = QuadSim(model, **sim_params)
 
   for test in tests:
     print(test.plotargs['label'])

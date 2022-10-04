@@ -2,7 +2,7 @@ import numpy as np
 
 from scipy.spatial.transform import Rotation as R
 
-import rot_metrics
+import quadsim.rot_metrics as rot_metrics
 
 from python_utils.mathu import e1, e2, e3
 
@@ -21,9 +21,10 @@ def thrust_maintain_z(accel_des, rot):
   return accel_des.dot(e3) / z_b.dot(e3)
 
 class CascadedController(Controller):
-  def __init__(self, model, rot_metric=rot_metrics.euler_zyx, u_f=thrust_project_z):
+  def __init__(self, model, rot_metric=rot_metrics.euler_zyx, u_f=thrust_project_z, add_angvel_linearizing_term=False):
     super().__init__()
-    self.Kpos = 6 * np.eye(3)
+    self.Kpos = 7 * np.eye(3)
+    self.Kpos[2, 2] = 6
     self.Kvel = 4 * np.eye(3)
     self.Krot = 120 * np.eye(3)
     self.Kang = 16 * np.eye(3)
@@ -38,6 +39,13 @@ class CascadedController(Controller):
     self.u_f = u_f
 
     self.model = model
+    self.add_angvel_linearizing_term = add_angvel_linearizing_term
+
+  def set_gains(self, pos, vel, rot, ang):
+    self.Kpos = np.diag(pos)
+    self.Kvel = np.diag(vel)
+    self.Krot = np.diag(rot)
+    self.Kang = np.diag(ang)
 
   def response(self, t, state):
     jerkref = self.ref.jerk(t)
@@ -64,6 +72,8 @@ class CascadedController(Controller):
     rot_error = self.rot_metric(state.rot, rotdes)
     ang_error = state.ang - angveldes_b
     angaccel = -self.Krot.dot(rot_error) - self.Kang.dot(ang_error) + angaccdes_b
+    if self.add_angvel_linearizing_term:
+      angaccel += -state.ang[2] * np.cross(e3, state.ang)
 
     bodyz_force = self.model.mass * udes
     torque = torque_from_aa(angaccel, self.model.I, state.ang)

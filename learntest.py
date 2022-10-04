@@ -5,17 +5,22 @@ import numpy as np
 from scipy.spatial.transform import Rotation as R
 
 from quadsim.cascaded import CascadedController, CascadedControllerLearnAccel
-from quadsim.dist import MassDisturbance, LinearDrag, InertiaDisturbance, MotorModelDisturbance
+from quadsim.dist import MassDisturbance, LinearDrag, InertiaDisturbance, MotorModelDisturbance, WindField
 from quadsim.fblin import FBLinController, FBLinControllerLearnAccel
 from quadsim.flatref import StaticRef, PosLineYawLine, YawLine, PosLine
+from quadsim.learn import InputVel, InputPos, InputPosVel
 from quadsim.models import IdentityModel, rocky09
 from quadsim.rigid_body import State
 
 from quadsim.compare import Test, plot, run
 
-import rot_metrics
+import quadsim.rot_metrics as rot_metrics
 
-from regression import Linear
+from regression import Linear, SSGPR
+
+import warnings
+import matplotlib.cbook
+warnings.filterwarnings("ignore", category=matplotlib.cbook.mplDeprecation)
 
 if __name__ == "__main__":
   startpos = np.zeros(3)
@@ -35,7 +40,7 @@ if __name__ == "__main__":
   dt = 0.005
   t_end = 2.0
 
-  n_trials = 6
+  n_trials = 8
 
   sim_motors = True
 
@@ -45,10 +50,11 @@ if __name__ == "__main__":
   ref = PosLineYawLine(start=startpos, end=endpos, startyaw=startyaw, endyaw=endyaw, duration=duration)
 
   dists = [
-    MassDisturbance(1.2),
-    InertiaDisturbance((1.3, 1.2, 1.5)),
-    LinearDrag(0.6),
-    MotorModelDisturbance(0.8),
+    #MassDisturbance(1.2),
+    #InertiaDisturbance((1.3, 1.2, 1.5)),
+    #LinearDrag(0.6),
+    WindField(pos=np.array((-1, 1.5, 0.0)), direction=np.array((1, 0, 0)), noisevar=0.0, vmax=100.0, decay_long=1.8),
+    #MotorModelDisturbance(0.8),
   ]
 
   model_control = rocky09()
@@ -56,18 +62,21 @@ if __name__ == "__main__":
 
   model_true = copy.deepcopy(model_control)
 
-  learner = Linear()
+  #learner = Linear()
+  #features = InputPosVel()
+  features = InputPos()
+  learner = SSGPR(N_feats=100, lengths=0.3 * np.ones(features.dim))
 
   def casc(rm):
     return CascadedController(model_control, rot_metric=rm)
 
   fblin_base = FBLinController(model_control, dt=dt)
-  fblin_learn = FBLinControllerLearnAccel(model_control, learner, dt=dt)
+  fblin_learn = FBLinControllerLearnAccel(model_control, learner, features, dt=dt)
 
   tests = [
-    Test(casc(rot_metrics.rotvec_tilt_priority2), label="Baseline FF"),
-    Test(CascadedControllerLearnAccel(model_control, learner, rot_metric=rot_metrics.rotvec_tilt_priority2), label="FFLin Learn", n_trials=n_trials),
-    Test(fblin_base, label="Baseline FB"),
+    #Test(casc(rot_metrics.rotvec_tilt_priority2), label="Baseline FF"),
+    Test(CascadedControllerLearnAccel(model_control, learner, features, rot_metric=rot_metrics.rotvec_tilt_priority2), label="FFLin Learn", n_trials=n_trials),
+    #Test(fblin_base, label="Baseline FB"),
     Test(fblin_learn, label="FBLin Learn", n_trials=n_trials)
   ]
 

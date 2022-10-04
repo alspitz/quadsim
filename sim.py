@@ -8,15 +8,15 @@ from python_utils.mathu import e3
 from quadsim.rigid_body import RigidBody
 
 class QuadSim:
-  def __init__(self, model):
+  def __init__(self, model, force_limit=200, torque_limit=50):
     self.gvec = np.array((0, 0, -model.g))
     self.mass = model.mass
     self.rb = RigidBody(mass=model.mass, inertia=model.I)
     self.model = model
 
-    self.force_limit = 200 # Newtons (N)
+    self.force_limit = force_limit # Newtons (N)
     # L_2 limit on vector
-    self.torque_limit = 100 # Nm
+    self.torque_limit = torque_limit # Nm
 
   def setstate(self, state):
     self.rb.setstate(state)
@@ -41,12 +41,12 @@ class QuadSim:
       bodyz_force, torque = self.forcetorque_from_u(controller.response(t, state), dt=dt)
 
       if bodyz_force < 0 or bodyz_force > self.force_limit:
-        print("Clipping force!")
+        #print("Clipping force!", bodyz_force)
         bodyz_force = np.clip(bodyz_force, 0, self.force_limit)
 
       torque_norm = np.linalg.norm(torque)
       if torque_norm > self.torque_limit:
-        print("Clipping torque!")
+        print("Clipping torque!", torque)
         torque *= self.torque_limit / torque_norm
 
       controlvars = {}
@@ -69,20 +69,19 @@ class QuadSim:
     return ts
 
 class QuadSimMotors(QuadSim):
-  def __init__(self, model):
-    super().__init__(model)
+  def __init__(self, model, **kwargs):
+    super().__init__(model, **kwargs)
     self.reset()
 
   def reset(self):
-    self.started = False
+    self.actrpm = self.model.rpm_from_forcetorque(self.model.mass * self.model.g, np.zeros(3))
 
   def forcetorque_from_u(self, desrpm, dt):
-    if not self.started:
-      self.started = True
-      self.actrpm = desrpm.copy()
+    alpha = self.model.motor_tc * dt
+    self.actrpm = alpha * desrpm + (1 - alpha) * self.actrpm
+    #self.actrpm = (alpha * desrpm[0] + (1 - alpha) * self.actrpm[0], alpha * desrpm[1] + (1 - alpha) * self.actrpm[1])
 
-    else:
-      alpha = self.model.motor_tc * dt
-      self.actrpm = alpha * desrpm + (1 - alpha) * self.actrpm
-
+    #u = self.model.forcetorque_from_rpm(self.actrpm)
+    #return u[0], self.model.forcetorque_from_rpm(desrpm)[1]
     return self.model.forcetorque_from_rpm(self.actrpm)
+    #return self.actrpm
