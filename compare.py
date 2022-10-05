@@ -187,8 +187,8 @@ if __name__ == "__main__":
 
   dists = [
     #MassDisturbance(1.2),
-    #InertiaDisturbance((1.3, 1.2, 1.5)),
-    #LinearDrag(1.2),
+    InertiaDisturbance((1.3, 1.2, 1.5)),
+    LinearDrag(1.2),
     #MotorModelDisturbance(0.8),
     #WindField(pos=np.zeros(3), direction=np.array((0, 1, 0)), vmax=30),
     #WindField(pos=endpos, direction=np.array((0, -1, 0)), vmax=30)

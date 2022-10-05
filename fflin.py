@@ -2,7 +2,7 @@ import numpy as np
 
 from scipy.spatial.transform import Rotation as R
 
-import quadism.rot_metrics as rot_metrics
+import quadsim.rot_metrics as rot_metrics
 
 from python_utils.mathu import normang, e1, e2, e3
 

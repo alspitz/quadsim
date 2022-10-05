@@ -32,7 +32,7 @@ class QuadSim:
   def reset(self):
     pass
 
-  def simulate(self, dt, t_end, controller, dists=None):
+  def simulate(self, dt, t_end, controller, dists=None, vis=True):
     if dists is None:
       dists = []
 
@@ -70,11 +70,11 @@ class QuadSim:
 
       self.rb.step(dt, force=force_world, torque=torque_body)
 
-      quat = state.rot.as_quat()
-      q2 = [quat[3], quat[0], quat[1], quat[2]]
-      self.vis.set_state(state.pos.copy(), q2)
+      if vis:
+        quat = state.rot.as_quat()
+        self.vis.set_state(state.pos.copy(), [quat[3], quat[0], quat[1], quat[2]])
 
-      time.sleep(5 * dt)
+      time.sleep(dt)
 
     ts.finalize()
     return ts
