@@ -18,6 +18,7 @@ Note that cloning `quadsim_devel` requires access permissions.
 mkdir ~/python
 cd ~/python
 git clone https://github.com/alspitz/python_utils
+git clone https://github.com/alspitz/regression # (optional)
 git clone https://github.com/alspitz/quadsim_devel quadsim
 ```
 
@@ -31,7 +32,7 @@ Change directory and rc file as needed (e.g. if using zsh).
 
 ## Usage
 
-Run `python main.py` and `python compare.py`.
+Run `python main.py`, `python compare.py`, or `python learntest.py`.
 
 A browser window should open with a visualization of the quadrotor executing the reference trajectories with the specified controllers.
 

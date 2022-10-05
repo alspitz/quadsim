@@ -7,7 +7,7 @@ import quadsim.rot_metrics as rot_metrics
 from python_utils.mathu import e1, e2, e3
 
 from quadsim.control import Controller, ControllerLearnAccel, torque_from_aa
-from quadsim.flatness import att_hod_from_flat
+from quadsim.flatness import att_hod_from_flat, get_xdot_xddot
 
 def thrust_project_z(accel_des, rot):
   z_b = rot.apply(e3)

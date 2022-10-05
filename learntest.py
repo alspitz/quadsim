@@ -65,7 +65,7 @@ if __name__ == "__main__":
   #learner = Linear()
   #features = InputPosVel()
   features = InputPos()
-  learner = SSGPR(N_feats=100, lengths=0.3 * np.ones(features.dim))
+  learner = SSGPR(N_feats=100, lengths=0.3 * np.ones(features.dim), include_constant=True, include_linear=True)
 
   def casc(rm):
     return CascadedController(model_control, rot_metric=rm)
