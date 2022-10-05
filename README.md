@@ -38,9 +38,9 @@ A browser window should open with a visualization of the quadrotor executing the
 
 After that, plots should appear showing state and control variables.
 
-`compare.py` has some disturbances and additional settings that can be enabled at the bottom of the file.
+[compare.py](compare.py) has some disturbances and additional settings that can be enabled at the bottom of the file.
 
-`learntest.py` iteratively learns a dynamics model to mitigate the effects of a static wind field.
+[learntest.py](learntest.py) iteratively learns a dynamics model to mitigate the effects of a static wind field.
 
 See below for what the meshcat visualization should look like.
 ![Meshcat visualization](media/meshcat-cf.png)
