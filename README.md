@@ -5,13 +5,13 @@
 First, install dependencies.
 
 Make sure you have numpy, scipy, and matplotlib (for Python 3).
-(Can install these using your system's pacakage manager).
+(Can install these using your system's package manager).
 
 Install meshcat e.g. with `pip install meshcat` (required for visualization).
 
 Quadsim requires the `python_utils` repo to exist on a `PYTHONPATH`.
 
-The recommended setup is to create a folder named "python" (e.g. in your home folder) and then clone both python_utils and quadsim in `~/python`.
+The recommended setup is to create a folder named "python" (e.g. in your home folder) and then clone both `python_utils` and `quadsim_devel` in `~/python`.
 Note that cloning `quadsim_devel` requires access permissions.
 
 ```
@@ -21,9 +21,9 @@ git clone https://github.com/alspitz/python_utils
 git clone https://github.com/alspitz/quadsim_devel quadsim
 ```
 
-Next, in your `.bashrc`, add `${HOME}/python` to `PYTHONPATH`
+Next, in your `.bashrc`, add `${HOME}/python` to `PYTHONPATH`.
 e.g. add the following line.
-`export PYTHONPATH="${HOME}/python":"${PYTHONPATH}"`
+```export PYTHONPATH="${HOME}/python":"${PYTHONPATH}"```
 
 Change directory and rc file as needed (e.g. if using zsh).
 
