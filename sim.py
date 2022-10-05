@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 
 from scipy.spatial.transform import Rotation as R
@@ -6,6 +8,7 @@ from python_utils.timeseriesu import TimeSeries
 from python_utils.mathu import e3
 
 from quadsim.rigid_body import RigidBody
+from quadsim.visualizer import Vis
 
 class QuadSim:
   def __init__(self, model, force_limit=200, torque_limit=50):
@@ -17,6 +20,8 @@ class QuadSim:
     self.force_limit = force_limit # Newtons (N)
     # L_2 limit on vector
     self.torque_limit = torque_limit # Nm
+
+    self.vis = Vis()
 
   def setstate(self, state):
     self.rb.setstate(state)
@@ -64,6 +69,12 @@ class QuadSim:
         torque_body += d[3:]
 
       self.rb.step(dt, force=force_world, torque=torque_body)
+
+      quat = state.rot.as_quat()
+      q2 = [quat[3], quat[0], quat[1], quat[2]]
+      self.vis.set_state(state.pos.copy(), q2)
+
+      time.sleep(5 * dt)
 
     ts.finalize()
     return ts
