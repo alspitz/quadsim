@@ -23,7 +23,9 @@ git clone https://github.com/alspitz/quadsim_devel quadsim
 
 Next, in your `.bashrc`, add `${HOME}/python` to `PYTHONPATH`.
 e.g. add the following line.
-```export PYTHONPATH="${HOME}/python":"${PYTHONPATH}"```
+```
+export PYTHONPATH="${HOME}/python":"${PYTHONPATH}"
+```
 
 Change directory and rc file as needed (e.g. if using zsh).
 
