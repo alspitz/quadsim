@@ -48,6 +48,7 @@ class CascadedController(Controller):
     self.Kang = np.diag(ang)
 
   def response(self, t, state):
+    accref = self.ref.acc(t)
     jerkref = self.ref.jerk(t)
     snapref = self.ref.snap(t)
     yawref = self.ref.yaw(t)
@@ -57,7 +58,7 @@ class CascadedController(Controller):
     # Position Control PD
     pos_error = state.pos - self.ref.pos(t)
     vel_error = state.vel - self.ref.vel(t)
-    accdes = -self.Kpos.dot(pos_error) - self.Kvel.dot(vel_error) + self.ref.acc(t)
+    accdes = -self.Kpos.dot(pos_error) - self.Kvel.dot(vel_error) + accref
 
     # Reference Conversion
     udes = self.u_f(accdes - self.gvec, state.rot)

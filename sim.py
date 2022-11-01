@@ -32,6 +32,39 @@ class QuadSim:
   def reset(self):
     pass
 
+  def step(self, t, dt, controller, dists=None, ts=None):
+    if dists is None:
+      dists = []
+
+    state = self.rb.state()
+    bodyz_force, torque = self.forcetorque_from_u(controller.response(t, state), dt=dt)
+
+    if bodyz_force < 0 or bodyz_force > self.force_limit:
+      #print("Clipping force!", bodyz_force)
+      bodyz_force = np.clip(bodyz_force, 0, self.force_limit)
+
+    torque_norm = np.linalg.norm(torque)
+    if torque_norm > self.torque_limit:
+      print("Clipping torque!", torque)
+      torque *= self.torque_limit / torque_norm
+
+    controlvars = {}
+    if hasattr(controller, 'vars'):
+      controlvars.update(controller.vars)
+
+    if ts is not None:
+      ts.add_point(time=t, **state.__dict__, force=bodyz_force, torque=torque, **controlvars)
+
+    force_world = bodyz_force * state.rot.apply(e3) + self.mass * self.gvec
+    torque_body = torque
+
+    for dist in dists:
+      d = dist.get(state, (bodyz_force, torque))
+      force_world += d[:3]
+      torque_body += d[3:]
+
+    self.rb.step(dt, force=force_world, torque=torque_body)
+
   def simulate(self, dt, t_end, controller, dists=None, vis=True):
     if dists is None:
       dists = []
@@ -41,40 +74,12 @@ class QuadSim:
 
     self.reset()
     for i in range(n_steps):
-      t = i * dt
-      state = self.rb.state()
-      bodyz_force, torque = self.forcetorque_from_u(controller.response(t, state), dt=dt)
-
-      if bodyz_force < 0 or bodyz_force > self.force_limit:
-        #print("Clipping force!", bodyz_force)
-        bodyz_force = np.clip(bodyz_force, 0, self.force_limit)
-
-      torque_norm = np.linalg.norm(torque)
-      if torque_norm > self.torque_limit:
-        print("Clipping torque!", torque)
-        torque *= self.torque_limit / torque_norm
-
-      controlvars = {}
-      if hasattr(controller, 'vars'):
-        controlvars.update(controller.vars)
-
-      ts.add_point(time=t, **state.__dict__, force=bodyz_force, torque=torque, **controlvars)
-
-      force_world = bodyz_force * state.rot.apply(e3) + self.mass * self.gvec
-      torque_body = torque
-
-      for dist in dists:
-        d = dist.get(state, (bodyz_force, torque))
-        force_world += d[:3]
-        torque_body += d[3:]
-
-      self.rb.step(dt, force=force_world, torque=torque_body)
+      self.step(i * dt, dt, controller, dists=dists, ts=ts)
 
       if vis:
-        quat = state.rot.as_quat()
-        self.vis.set_state(state.pos.copy(), [quat[3], quat[0], quat[1], quat[2]])
-
-      time.sleep(dt)
+        state = self.rb.state()
+        self.vis.set_state(state.pos.copy(), state.rot)
+        time.sleep(dt)
 
     ts.finalize()
     return ts

@@ -32,11 +32,13 @@ Change directory and rc file as needed (e.g. if using zsh).
 
 ## Usage
 
-Run `python main.py`, `python compare.py`, or `python learntest.py`.
+Run `python interactive.py`, `python main.py`, `python compare.py`, or `python learntest.py`.
 
 A browser window should open with a visualization of the quadrotor executing the reference trajectories with the specified controllers.
 
 After that, plots should appear showing state and control variables.
+
+[interactive.py](interactive.py) allows you to send step commands to the robot using WASD, QE, and -+ (while focused on the terminal).
 
 [compare.py](compare.py) has some disturbances and additional settings that can be enabled at the bottom of the file.
 
