@@ -11,15 +11,14 @@ Install meshcat e.g. with `pip install meshcat` (required for visualization).
 
 Quadsim requires the `python_utils` repo to exist on a `PYTHONPATH`.
 
-The recommended setup is to create a folder named "python" (e.g. in your home folder) and then clone both `python_utils` and `quadsim_devel` in `~/python`.
-Note that cloning `quadsim_devel` requires access permissions.
+The recommended setup is to create a folder named "python" (e.g. in your home folder) and then clone both `python_utils` and `quadsim` in `~/python`.
 
 ```
 mkdir ~/python
 cd ~/python
 git clone https://github.com/alspitz/python_utils
 git clone https://github.com/alspitz/regression # (optional)
-git clone https://github.com/alspitz/quadsim_devel quadsim
+git clone https://github.com/alspitz/quadsim
 ```
 
 Next, in your `.bashrc`, add `${HOME}/python` to `PYTHONPATH`.
